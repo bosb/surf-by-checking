@@ -1,0 +1,30 @@
+{
+
+  "description": "Proof of concept to implement checks on webpages for api requests that seem to be important and a nightmare to check on network tab. Object under test: xing.com",
+  "manifest_version": 2,
+  "name": "surf-by-checking",
+  "version": "1.0",
+  "homepage_url": "https://github.com/bosb/surf-by-checking",
+  "icons": {
+    "48": "icons/outline_fact_check_black_48dp.png"
+  },
+
+  "permissions": [
+    "webRequest",
+    "<all_urls>",
+    "activeTab",
+    "notifications"
+  ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+"content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"]
+    }
+  ]
+
+}

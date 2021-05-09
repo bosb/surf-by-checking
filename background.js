@@ -8,14 +8,16 @@ let xingoneapicall = { count: 0, // number of calls to xing-one
 
 function xingoneCountreset(requestDetails) {
   // reset on click on page
-  //console.log(requestDetails);
-  xingoneapicall = { count: 0,
-                        max: 0,
-                        gttwentyk: 0,
-                        gttenk: 0,
-                        lttenk: 0,
-                        ltonek:0
-                      }
+  console.log(requestDetails);
+  if (requestDetails.message === 'reset' || requestDetails.method === 'GET') {
+      xingoneapicall = { count: 0,
+                            max: 0,
+                            gttwentyk: 0,
+                            gttenk: 0,
+                            lttenk: 0,
+                            ltonek:0
+                          }
+  }
 }
 
 // A) xing-one requests
@@ -52,9 +54,9 @@ function xingoneSize(requestDetails) {
   
   // create or update box
   if (xingoneapicall['count'] <= 1) {
-    let putbox = ` try { document.querySelector('div#myAlertBox').remove(); } catch(e) {}
+    let putbox = ` try { document.querySelector('div#xingonelertBox').remove(); } catch(e) {}
         var box = document.createElement( 'div' );
-        box.id = 'myAlertBox';
+        box.id = 'xingoneAlertBox';
         box.innerHTML = "${update_text}";
         box.style.cssText =
             ' background: white;     ' +
@@ -73,13 +75,13 @@ function xingoneSize(requestDetails) {
   } else {
     browser.tabs.executeScript(
       requestDetails['tabId'],
-      {code: `try { document.querySelector('div#myAlertBox').innerHTML= "${update_text}"; } catch(e) {}`,
+      {code: `try { document.querySelector('div#xingoneAlertBox').innerHTML= "${update_text}"; } catch(e) {}`,
     });
   }
 
   // on error change frame to red
   if (errors > 0) {
-    let frame = `try { document.querySelector('div#myAlertBox').style.border = "${errors}px solid red"; } catch(e) {}`
+    let frame = `try { document.querySelector('div#xingoneAlertBox').style.border = "${errors}px solid red"; } catch(e) {}`
     browser.tabs.executeScript(
       requestDetails['tabId'],
       {code: frame,

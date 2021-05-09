@@ -9,6 +9,8 @@ If you need to check some api requests from/on your website, you open up develop
 On first exploring you find stuff, but would need to check hundreds of objects, manual...
 Wouldn't it be more convenient to led code do the work?
 
+It might not work, yet, on your version of xing.com.
+
 ### Example:
 On xing every card/message/object has a view tracking that is fired every 10 seconds when an object leaves/enters the viewport;
 The entries in there need to have specific values and a specific format, this can change while refactoring or introducing new content types and though break.

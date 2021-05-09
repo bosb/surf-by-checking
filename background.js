@@ -6,10 +6,12 @@ let xingoneapicall = { count: 0, // number of calls to xing-one
                         ltonek:0  // < 4kb
                       }
 
+let tracking_error_list = {}
+
 function xingoneCountreset(requestDetails) {
   // reset on click on page
-  console.log(requestDetails);
   if (requestDetails.message === 'reset' || requestDetails.method === 'GET') {
+      console.log('RESET');
       xingoneapicall = { count: 0,
                             max: 0,
                             gttwentyk: 0,
@@ -17,6 +19,16 @@ function xingoneCountreset(requestDetails) {
                             lttenk: 0,
                             ltonek:0
                           }
+  }
+  if (requestDetails.message.startsWith('object-') === true) {
+      console.log(requestDetails.message);
+      let object = requestDetails.message.split('.')[0].split('-')[1]
+      let x = requestDetails.message.replace('.','\\\\.')
+    // toggle message
+    browser.tabs.executeScript(
+      requestDetails['tabId'],
+      {code: `try { if (document.querySelector('div#${x}').innerHTML === ''){ document.querySelector('div#${x}').innerHTML="${tracking_error_list[object]}";} else {document.querySelector('div#${x}').innerHTML=''} } catch(e) {}`,
+    });
   }
 }
 
@@ -109,6 +121,7 @@ function logURL(requestDetails) {
     let object_id = 0
     // activity_id
     let activity_id = 0
+    let error_string = ''
 
     // checks ---------------------------------------------
     // a) object_urn available and scrambled
@@ -119,7 +132,14 @@ function logURL(requestDetails) {
         item['object_urn'].split(':')[item['object_urn'].split(':').length-1].split('.')[1].toString()
         object_id = object_id.split('.')[1]
     } catch (e) {
-        console.log('ERROR: object_urn available and scrambled')
+        error_string = `object_urn available and scrambled: ${item['object_urn']}`
+        console.log(`ERROR: ${error_string}`)
+        if (tracking_error_list[object_id] === undefined) {
+            tracking_error_list[object_id] = ''
+        }
+        if (tracking_error_list[object_id].indexOf(error_string) === -1) {
+            tracking_error_list[object_id] += `<br> ${error_string}`
+        }
         errors +=1
     }
     // b) additional_info.activity_id available
@@ -183,6 +203,31 @@ function logURL(requestDetails) {
     browser.tabs.executeScript(
       requestDetails['tabId'],
       {code: result_frame_activity,
+    });
+
+    // put a click target on every object, if it does not jet have one
+    // assuming, this function is fired when tracking events are send, thus page mooved, thus new items might got lazy loaded...
+    browser.tabs.executeScript(
+      requestDetails['tabId'],
+      {code: `
+           document.querySelectorAll('li div[data-qa^="object-"] ').forEach(function(userItem) {
+                  try {console.log(userItem.attributes.getNamedItem('data-qa').value)} catch(e) {}
+                  try {let x = userItem.attributes.getNamedItem('data-qa').value
+                    if (x !== 'object-0' && userItem.firstChild.id !== x) {
+                        var box = document.createElement( 'div' );
+                        box.id = x//.split('.')[0];
+                        box.setAttribute('data-qa', x)
+                        box.style.cssText =
+                            ' background: white;     ' +
+                            ' border: 5px solid orange; ' +
+                            ' padding: 2px;          ' +
+                            ' opacity: 85%; ' +
+                            ' float: left;      ' ;
+                        userItem.insertBefore( box , userItem.firstChild);
+                    }
+                  } catch(e) {}
+            });
+      `,
     });
 
   });

@@ -11,7 +11,6 @@ let tracking_error_list = {}
 function xingoneCountreset(requestDetails) {
   // reset on click on page
   if (requestDetails.message === 'reset' || requestDetails.method === 'GET') {
-      console.log('RESET');
       xingoneapicall = { count: 0,
                             max: 0,
                             gttwentyk: 0,
@@ -66,7 +65,7 @@ function xingoneSize(requestDetails) {
   
   // create or update box
   if (xingoneapicall['count'] <= 1) {
-    let putbox = ` try { document.querySelector('div#xingonelertBox').remove(); } catch(e) {}
+    let putbox = ` try { document.querySelector('div#xingoneAlertBox').remove(); } catch(e) {}
         var box = document.createElement( 'div' );
         box.id = 'xingoneAlertBox';
         box.innerHTML = "${update_text}";
@@ -132,7 +131,7 @@ function logURL(requestDetails) {
         item['object_urn'].split(':')[item['object_urn'].split(':').length-1].split('.')[1].toString()
         object_id = object_id.split('.')[1]
     } catch (e) {
-        error_string = `object_urn available and scrambled: ${item['object_urn']}`
+        error_string = `object_urn available and scrambled: ${item['event']} ${item['object_urn']}`
         console.log(`ERROR: ${error_string}`)
         if (tracking_error_list[object_id] === undefined) {
             tracking_error_list[object_id] = ''
@@ -211,7 +210,7 @@ function logURL(requestDetails) {
       requestDetails['tabId'],
       {code: `
            document.querySelectorAll('li div[data-qa^="object-"] ').forEach(function(userItem) {
-                  try {console.log(userItem.attributes.getNamedItem('data-qa').value)} catch(e) {}
+                  //try {console.log(userItem.attributes.getNamedItem('data-qa').value)} catch(e) {}
                   try {let x = userItem.attributes.getNamedItem('data-qa').value
                     if (x !== 'object-0' && userItem.firstChild.id !== x) {
                         var box = document.createElement( 'div' );

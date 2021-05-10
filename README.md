@@ -39,6 +39,7 @@ There is no UI to implement the checks, they need to be written by modifying the
 ## Learning on the way:
 - An extension has its own set of developer tools and console messages from the extension show up there and not on the webpage console.
 - Loading debug extension from directory.
+  https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension#trying_it_out
 - Pack and submit extension file to mozilla for signing and though getting a loadable extension to distribute.
 - Developers of xing.com thought of qa-data id for each object that is also used in the trackng events.
 

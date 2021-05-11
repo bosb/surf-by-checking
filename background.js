@@ -3,7 +3,8 @@ let xingoneapicall = { count: 0, // number of calls to xing-one
                         gttwentyk: 0, // > 20kb
                         gttenk: 0, // > 10kb, < 20kb
                         lttenk: 0, // < 10k, > 4kb
-                        ltonek:0  // < 4kb
+                        ltonek:0,  // < 4kb
+                        functions: {}
                       }
 
 let tracking_error_list = {}
@@ -16,17 +17,20 @@ function xingoneCountreset(requestDetails) {
                             gttwentyk: 0,
                             gttenk: 0,
                             lttenk: 0,
-                            ltonek:0
+                            ltonek:0,
+                            functions: {}
                           }
   }
   if (requestDetails.message.startsWith('object-') === true) {
-      console.log(requestDetails.message);
+      //console.log(requestDetails.message);
       let object = requestDetails.message.split('.')[0].split('-')[1]
       let x = requestDetails.message.replace('.','\\\\.')
-    // toggle message
+    // toggle message and copy to clipboard
     browser.tabs.executeScript(
       requestDetails['tabId'],
-      {code: `try { if (document.querySelector('div#${x}').innerHTML === ''){ document.querySelector('div#${x}').innerHTML="${tracking_error_list[object]}";} else {document.querySelector('div#${x}').innerHTML=''} } catch(e) {}`,
+      {code: `try { if (document.querySelector('div#${x}').innerHTML === ''){ document.querySelector('div#${x}').innerHTML="${tracking_error_list[object]}"; } else {document.querySelector('div#${x}').innerHTML=''} } catch(e) {}
+            try { if (document.querySelector('div#${x}').innerHTML !== ''){ let range = document.createRange(); range.selectNodeContents(document.getElementById("${requestDetails.message}")); window.getSelection().addRange(range); document.execCommand("copy");}} catch(e) {}
+      `,
     });
   }
 }
@@ -34,7 +38,16 @@ function xingoneCountreset(requestDetails) {
 // A) xing-one requests
 function xingoneSize(requestDetails) {
 // check xing-one requests
-//  console.log(requestDetails);
+  //console.log(requestDetails);
+  requestDetails['responseHeaders'].forEach(function(item){
+    if (item['name'] === 'X-Logjam-Request-Action'){
+        //console.log(item['value'])
+        if (xingoneapicall['functions'][item['value']] === undefined) {
+            xingoneapicall['functions'][item['value']] = 0
+        }
+        xingoneapicall['functions'][item['value']] +=1
+    }
+  })
   let errors = 0
 
   xingoneapicall['count'] += 1
@@ -61,7 +74,11 @@ function xingoneSize(requestDetails) {
   // \checks ---------------------------------------------
 
   // result string display as overlay
-  let update_text = `xing-one: ${xingone_count} <br> max: ${number_nice} <br> 10k: ${xingoneapicall['gttenk']} &nbsp;&nbsp;  4k: ${xingoneapicall['ltonek']}<br> 4k-10k: ${xingoneapicall['lttenk']}` + xingone_size
+  let functions = ''
+    Object.keys(xingoneapicall['functions']).forEach(function (key) {
+    functions += `<br> ${key} ${xingoneapicall['functions'][key]}`
+  })
+  let update_text = `xing-one: ${xingone_count} <br> max: ${number_nice} <br> 10k: ${xingoneapicall['gttenk']} &nbsp;&nbsp;  4k: ${xingoneapicall['ltonek']}<br> 4k-10k: ${xingoneapicall['lttenk']}` + xingone_size + functions
   
   // create or update box
   if (xingoneapicall['count'] <= 1) {
@@ -74,6 +91,7 @@ function xingoneSize(requestDetails) {
             ' border: 5px solid green; ' +
             ' padding: 2px;          ' +
             ' position: fixed;    ' +
+            ' font-size: 10px; ' +
             ' top: 8px; left: 8px;   ' +
             ' z-index: 999; opacity: 85%; ' +
             ' max-width: 400px;      ' ;
@@ -98,6 +116,16 @@ function xingoneSize(requestDetails) {
       {code: frame,
     });
   }
+}
+
+function logError(object_id,error_string) {
+    //console.log(`ERROR: ${error_string}`)
+    if (tracking_error_list[object_id] === undefined) {
+        tracking_error_list[object_id] = ''
+    }
+    if (tracking_error_list[object_id].indexOf(error_string) === -1) {
+        tracking_error_list[object_id] += `<br> ${error_string}`
+    }
 }
 
 // B) operational tracking
@@ -125,37 +153,33 @@ function logURL(requestDetails) {
     // checks ---------------------------------------------
     // a) object_urn available and scrambled
     try {
-        console.log(`- object_urn: ${item['object_urn']}`) // surn:x-xing:content:insider_article:3959854.f444dc
+        //console.log(`- object_urn: ${item['object_urn']}`) // surn:x-xing:content:insider_article:3959854.f444dc
         object_id = item['object_urn'].split(':')[item['object_urn'].split(':').length-1]
         item['object_urn'].split(':')[3].toString()
         item['object_urn'].split(':')[item['object_urn'].split(':').length-1].split('.')[1].toString()
         object_id = object_id.split('.')[1]
     } catch (e) {
         error_string = `object_urn available and scrambled: ${item['event']} ${item['object_urn']}`
-        console.log(`ERROR: ${error_string}`)
-        if (tracking_error_list[object_id] === undefined) {
-            tracking_error_list[object_id] = ''
-        }
-        if (tracking_error_list[object_id].indexOf(error_string) === -1) {
-            tracking_error_list[object_id] += `<br> ${error_string}`
-        }
+        logError(object_id,error_string)
         errors +=1
     }
     // b) additional_info.activity_id available
     try {
-        console.log(`- activity_id: ${item['additional_info']['activity_id']}`) // 5425232315.4fc795
+        //console.log(`- activity_id: ${item['additional_info']['activity_id']}`) // 5425232315.4fc795
         activity_id = item['additional_info']['activity_id'].split('.')[0]
         item['additional_info']['activity_id'].split('.')[1].toString()
     } catch (e) {
-        console.log('ERROR: additional_info.activity_id available')
+        error_string = `additional_info.activity_id available: ${item['event']} ${item['additional_info']['activity_id']}`
+        logError(object_id,error_string)
         errors +=1
     }
     // c) tracking_tokens are available
     try {
-        console.log(`- tracking_tokens: ${item['tracking_tokens']}`) // tracking_tokens: Array [ "disco.module.trendingObjects:9...f:0.7166135.postings_link_share_posting" ]
+        //console.log(`- tracking_tokens: ${item['tracking_tokens']}`) // tracking_tokens: Array [ "disco.module.trendingObjects:9...f:0.7166135.postings_link_share_posting" ]
         item['tracking_tokens'][0].toString()
     } catch (e) {
-        console.log('ERROR: tracking_tokens available')
+        error_string = `tracking_tokens available: ${item['event']} ${item['tracking_tokens'][0]}`
+        logError(object_id,error_string)
         errors +=1
     }
     // d) id/urn available and scrambled
@@ -167,11 +191,12 @@ function logURL(requestDetails) {
           case 'originActivityId':
           case 'originActivityId':
             try {
-              console.log(`- ${key}: ${item[key]}`);
+              //console.log(`- ${key}: ${item[key]}`);
               item[key].split(':')[3].toString()
               item[key].split(':')[item[key].split(':').length-1].split('.')[1].toString()
             } catch (e) {
-                console.log('ERROR: id/urn available and scrambled')
+                error_string = `id/urn available and scrambled: ${key} ${item['event']} ${item[key]}`
+                logError(object_id,error_string)
                 errors +=1
             }
           break;
@@ -191,8 +216,8 @@ function logURL(requestDetails) {
         pixel = errors
         color = 'red'
     }
-    // TODO: add list as popup whats wrong?
-    // TODO: print in object which event took place
+    // object_id is reference, since both are used unknown, copy data from reference to second candidate
+    tracking_error_list[activity_id] = tracking_error_list[object_id]
     result_frame_object = `try { document.querySelector('div[data-qa^=object-${object_id}]').style.border = "${pixel}px solid ${color}"; } catch(e) {}`
     result_frame_activity = `try { document.querySelector('div[data-qa^=object-${activity_id}]').style.border = "${pixel}px solid ${color}"; } catch(e) {}`
     browser.tabs.executeScript(
@@ -221,6 +246,7 @@ function logURL(requestDetails) {
                             ' border: 5px solid orange; ' +
                             ' padding: 2px;          ' +
                             ' opacity: 85%; ' +
+                            ' font-size: 10px; ' +
                             ' float: left;      ' ;
                         userItem.insertBefore( box , userItem.firstChild);
                     }
